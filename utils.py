@@ -25,7 +25,7 @@ def burn_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
     elif line == 'B_U':
         attribute = properties.B_U
     
-    run_or_stop = 'stop'
+    run_or_stop = 'start'
     reject_or_pass = 'reject'
     del_folder(properties.day_limit)
 
@@ -37,7 +37,7 @@ def burn_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
     cam, converter = vision_CAM.load_camera()
 
     if cam:
-        null_image = np.zeros((494,659,3),np.uint8)  # 빈 이미지 1280 1024
+        null_image = np.zeros((350,350,3),np.uint8)  # 빈 이미지 1280 1024
         null_image = cv2.putText(null_image, "Waiting RUN signal...", (10, 100), cv2.FONT_HERSHEY_DUPLEX, 1, [255,200,255], 2)
         
         """ YOLO 모델 활성 """
@@ -71,7 +71,7 @@ def burn_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
                 
                     if detections:
                         for result in detections:
-                            label, confidence, (x, y, w, h) = result
+                            x1, y1, x2, y2, confidence, label = result
                             if label == '1' and confidence > attribute['save_limit']: # 저장 기준을 넘겼음
                                 timestamp = time.strftime("%Y%m%d_%H%M%S")
                                 name_save = f"{line}_{timestamp}.jpg"
@@ -83,7 +83,7 @@ def burn_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
                                     print(f"[{line}] >>>>>>>> {label}, {confidence}")
                                 
                 else: # 카메라로부터 이미지를 받지 못하였다면
-                    n_image = np.zeros((494,659,3),np.uint8)
+                    n_image = np.zeros((350,350,3),np.uint8)
                     n_image = cv2.putText(n_image, "Camera Err...", (10, 100), cv2.FONT_HERSHEY_DUPLEX, 1, [255,200,255], 2)
                     img_Q.put(n_image)
             else: #프로그램 시작하지 않은 상태라면
@@ -99,7 +99,7 @@ def gap_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
     elif line == 'B_D':
         attribute = properties.B_D
     
-    run_or_stop = 'stop'
+    run_or_stop = 'start'
     reject_or_pass = 'reject'
     del_folder(properties.day_limit)
 
@@ -111,9 +111,9 @@ def gap_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
     cam, converter = vision_CAM.load_camera()
 
     if cam:
-        null_image = np.zeros((494,659,3),np.uint8)  # 빈 이미지
+        null_image = np.zeros((350,350,3),np.uint8)  # 빈 이미지
         null_image = cv2.putText(null_image, "Waiting RUN signal...", (10, 100), cv2.FONT_HERSHEY_DUPLEX, 1, [255,200,255], 2)
-        loaded_view = np.zeros((494,659,3),np.uint8)  # 빈 이미지
+        loaded_view = np.zeros((350,350,3),np.uint8)  # 빈 이미지
         
         """ YOLO 모델 활성 """
         model = YOLOModel(config_file = attribute['config_file'],
@@ -164,26 +164,23 @@ def gap_inspection(line, start_Q, quit_Q, reject_Q, img_Q, relay_cmd_queue):
                         loaded_view = view
                     
                     if detections:
+                        # print(detections)
                         for result in detections:
-                            label, confidence, (x, y, w, h) = result
+                            x1, y1, x2, y2, confidence, label = result
                             if label == '1' and confidence > attribute['save_limit']: # 저장 기준을 넘겼음
                                 timestamp = time.strftime("%Y%m%d_%H%M%S")
                                 name_save = f"{line}_{timestamp}.jpg"
                                 cv2.imwrite(os.path.join(save_dir, name_save), image_rgb)
                                 print(f"[Saved] >>>>>>>> {name_save}")
-                                
+                                  
                                 if confidence >= attribute['reject_limit']: # 리젝트 기준을 넘겼음
                                     relay_cmd_queue.put(("NG", attribute['relay_port'], attribute['delay'], attribute['duration']))
                                     print(f"[{line}] >>>>>>>> {label}, {confidence}")
 
-                    img_Q.put(loaded_view)
-                                
-                #else: # 카메라로부터 이미지를 받지 못하였다면
-                #    n_image = np.zeros((494,659,3),np.uint8)
-                #    n_image = cv2.putText(n_image, "Camera Err...", (10, 100), cv2.FONT_HERSHEY_DUPLEX, 1, [255,200,255], 2)
-                #    img_Q.put(n_image)
+                    img_Q.put(cv2.resize(loaded_view, (350, 500), interpolation=cv2.INTER_LINEAR))
+
             else: #프로그램 시작하지 않은 상태라면
-                img_Q.put(loaded_view)
+                img_Q.put(cv2.resize(loaded_view, (350, 500), interpolation=cv2.INTER_LINEAR))
                 
         vision_CAM.destroy_cam()
         cv2.destroyAllWindows()
