@@ -40,7 +40,7 @@ if __name__ == "__main__":
         cv2.namedWindow('Noksan', flags=cv2.WINDOW_NORMAL)
         ui_state = ui.UIState()
         cv2.setMouseCallback("Noksan", ui.handle_mouse_event, ui_state)
-        cv2.resizeWindow(winname='Noksan', width=200, height=800)
+        cv2.resizeWindow(winname='Noksan', width=100, height=600)
     
         while True:
             img = ui.draw_main_ui(ui_state)
@@ -51,22 +51,22 @@ if __name__ == "__main__":
             imgAU = utils.get_latest(AU_img)
             if imgAU is not None:
                 cv2.imshow('A-Upper', imgAU)
-                cv2.moveWindow('A-Upper', 175, 50)
+                cv2.moveWindow('A-Upper', 200, 50)
 
             imgAD = utils.get_latest(AD_img)
             if imgAD is not None:
                 cv2.imshow('A-Down', imgAD)
-                cv2.moveWindow('A-Down', 175, 500)
+                cv2.moveWindow('A-Down', 200, 500)
         
             imgBU = utils.get_latest(BU_img)
             if imgBU is not None:
                 cv2.imshow('B-Upper', imgBU)
-                cv2.moveWindow('B-Upper', 575, 50)
+                cv2.moveWindow('B-Upper', 875, 50)
 
             imgBD = utils.get_latest(BD_img)
             if imgBD is not None:
                 cv2.imshow('B-Down', imgBD)
-                cv2.moveWindow('B-Down', 575, 500)
+                cv2.moveWindow('B-Down', 875, 500)
         
             if ui_state.program_off:
                 AU_quit.put('off'); AD_quit.put('off');  BU_quit.put('off'); BD_quit.put('off')
